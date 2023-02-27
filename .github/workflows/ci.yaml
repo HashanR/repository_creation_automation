@@ -44,4 +44,4 @@ jobs:
       # Use output of Python script as summary of the workflow
       - name: Set summary
         if: ${{ always() }}
-        run: echo "Summary: ${{ steps.run-python-script.outputs.summary }}"
+        run: echo "Summary:: ${{ steps.run-python-script.outputs.summary }}"
