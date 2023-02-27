@@ -42,6 +42,6 @@ jobs:
         run: |
           echo "Running deployment for ${{ github.event.inputs.repository-name }}..."
       # Use output of Python script as summary of the workflow
-      - name: Set summary
-        if: ${{ always() }}
-        run: echo "Summary:: ${{ steps.run-python-script.outputs.summary }}"
+      # - name: Set summary
+      #   if: ${{ always() }}
+      #   run: echo "Summary: ${{ steps.run-python-script.outputs.summary }}"
