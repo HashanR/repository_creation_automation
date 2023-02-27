@@ -19,7 +19,7 @@ def create_repository():
     github_api_client = Github(GITHUB_ACCESS_TOKEN)
 
     # Create new repository
-    repo_name = config.get('repository_name')
+    repo_name = REPOSITORY_NAME
     if repo_name is None:
         logging.error('Repository name not found in config')
         return
@@ -80,7 +80,7 @@ def add_team_to_repository(repo):
   
   
   # Add team to repository
-  team_slug = config.get('team')
+  team_slug = TEAM_NAME
   if team_slug is None:
       logging.error('Team not found in config')
 
