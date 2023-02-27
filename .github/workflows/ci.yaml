@@ -25,23 +25,3 @@ jobs:
         run: |
           python deploy.py ${{ github.event.inputs.repository-name }} ${{ github.event.inputs.team-name }}
           echo "::set-output name=summary::Deployment succeeded"
-      # Require approval before running the deployment
-      - name: Request approval
-        uses: peter-evans/request-changes@v1
-        with:
-          reviewers: ${{ github.event.inputs.team-name }}
-          num-reviewers: 1
-          changes-requested-message: Please approve this deployment.
-      - name: Wait for approval
-        uses: peter-evans/wait-for-approval@v2
-        with:
-          reviewers: ${{ github.event.inputs.team-name }}
-          num-approvals: 1
-          pull-request-message: Approved!
-      - name: Run deployment
-        run: |
-          echo "Running deployment for ${{ github.event.inputs.repository-name }}..."
-      # Use output of Python script as summary of the workflow
-      # - name: Set summary
-      #   if: ${{ always() }}
-      #   run: echo "Summary: ${{ steps.run-python-script.outputs.summary }}"
