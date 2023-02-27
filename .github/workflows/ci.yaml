@@ -23,5 +23,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python deploy.py ${{ github.event.inputs.repository-name }} ${{ github.event.inputs.team-name }}
+          python main.py ${{ github.event.inputs.repository-name }} ${{ github.event.inputs.team-name }}
           echo "::set-output name=summary::Deployment succeeded"
