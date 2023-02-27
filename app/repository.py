@@ -1,13 +1,13 @@
 import logging
 import requests
-from github import Github, GithubException,InputGitTreeElement
-from .config import GITHUB_ACCESS_TOKEN, CONFIG_FILE_NAME, WORKFLOW_CONFIG_FILE_NAME
+from github import Github, GithubException
+from .config import *
 from .utils import load_config, load_workflow_config
-
+import json
 
 
 ##############################################################
-## Create Repository Method                                 ##
+## Create Repository                                        ##
 ##                                                          ## 
 ##############################################################
 def create_repository():
@@ -38,14 +38,38 @@ def create_repository():
        logging.error(f"Failed to create repository: {e}") 
        raise
 
-
-
-
 ##############################################################
-## Add Team to Repository Method                            ##
+## Add Readme File                                          ##
 ##                                                          ## 
 ##############################################################
+def add_readme_create_branches(repo):
+    
+    try:
+        # create README.md file
+        contents = "This is a sample README file."
+        repo.create_file("README.md", "Initial commit",
+                         contents, branch="master")
+        
+        
+        logging.info(
+            f"Successfully created branches and added README file to repository {repo}.")
 
+    except GithubException as e:
+        logging.error(f"Failed to create repository {repo}. Error: {e}")
+
+    except Exception as e:
+        logging.error(
+            f"An error occurred while creating branches and adding README file to repository {repo}. Error: {e}")
+
+    except GithubException as e:
+        logging.exception(
+            "Error occurred while creating branches and pushing to GitHub: %s", e)
+        raise
+    
+##############################################################
+## Add Teams to Repository                                  ##
+##                                                          ##
+##############################################################
 def add_team_to_repository(repo):
   
   # Load configuration from file  
@@ -74,50 +98,104 @@ def add_team_to_repository(repo):
       logging.error(f"Failed to add team to repository: {e}")
       raise   
     
-     
-def add_workflow_files_to_repository():
+##############################################################
+## Add Workflow files to Repository                         ##
+##                                                          ##
+##############################################################
+
+def add_workflow_files_to_repository(repo):
+
+    github_api_client = Github(GITHUB_ACCESS_TOKEN)
+
+    files_to_copy = load_workflow_config(WORKFLOW_CONFIG_FILE_NAME)
+
+    src_repo = github_api_client.get_repo(WORKFLOW_COPY_FROM_REPOSITORY)
+    dst_repo = repo
+
+    # Define the directory to copy
+    dir_to_copy = DIR_TO_COPY
+
+    # Copy the files from the source repository to the destination repository
+    for file_path in files_to_copy:
+        # Get the contents of the file from the source repository
+        file_contents = src_repo.get_contents(
+            f"{dir_to_copy}/{file_path}").decoded_content.decode()
+
+        # Create the file in the destination repository
+        dst_repo.create_file(f"{dir_to_copy}/{file_path}",
+                             f"Copy {file_path} from {src_repo.name}", file_contents)
+
+        # Copy the file to the master branch
+        file_contents = dst_repo.get_contents(
+            f"{dir_to_copy}/{file_path}", ref='master').decoded_content.decode()
+        if file_contents != src_repo.get_contents(f"{dir_to_copy}/{file_path}").decoded_content.decode():
+            dst_repo.create_file(f"{dir_to_copy}/{file_path}",
+                                 f"Copy {file_path} from {src_repo.name} to master", file_contents, branch='master')
+
+
+##############################################################
+## Create Develop Branch from Master                        ##
+##                                                          ##
+##############################################################
+
+def create_develop_branch(repo):
+# get the reference object for the master branch
+  master_ref = repo.get_git_ref('heads/master')
+
+# create a new branch called develop
+  repo.create_git_ref(ref='refs/heads/develop', sha=master_ref.object.sha)
     
-  github_api_client = Github(GITHUB_ACCESS_TOKEN)
 
-  # Load configuration from file  
-  config = load_workflow_config(WORKFLOW_CONFIG_FILE_NAME)
-  
-  
-  
-  source_repo = github_api_client.get_repo("HashanR/test_workflows")
-  target_repo = github_api_client.get_repo("HashanR/test_ccc_aaaa")
-
-
-  try:
-     # Copy each workflow file in the list to the target repository's main and develop branches
-     for file_name in config:
-        # Get the contents of the file in the source repository
-        file_content = source_repo.get_contents(f".github/workflows/{file_name}.yaml")
-        if file_content is not None:
-            file_content = file_content.decoded_content.decode("utf-8")
-            # Copy the file to the target repository's main and develop branches
-            target_repo.create_file(f".github/workflows/{file_name}.yaml", f"Copy {file_name}.yaml from {source_repo.full_name}", file_content, branch="main")
-            target_repo.create_file(f".github/workflows/{file_name}.yaml", f"Copy {file_name}.yaml from {source_repo.full_name}", file_content, branch="develop")
-        else:
-         print(f"File .github/workflows/{file_name}.yml not found in {source_repo.full_name}. Skipping.")
-         print("Workflow files copied successfully.")
-  except GithubException as e:
-        print(f"Error copying workflow files: {e}")
-    
-    
-       
-
-
+##############################################################
+## Add Branch Protection Rules                              ##
+##                                                          ##
+##############################################################
 def add_branch_protection_rules(repo):
-    try:
-        branch_names = ['master', 'develop']
-        for branch_name in branch_names:
-            branch = repo.get_branch(branch_name)
-            if not branch.protected:
-                branch.edit_protection(strict=True, contexts=[])
-                logging.info(f"Added branch protection rule to {branch_name}")
+
+    repo = ORG + '/' + repo.name
+       
+    # Set the headers with your GitHub personal access token
+    headers = {
+        "Authorization": f"Bearer {GITHUB_ACCESS_TOKEN}",
+        "Accept": "application/vnd.github.luke-cage-preview+json"
+    }
+
+    # Set the body with the desired protection rules
+    body = {
+        "required_pull_request_reviews": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews": True,
+            "require_code_owner_reviews": False
+        },
+        "enforce_admins": True,
+        "required_status_checks": {
+            "strict": True,
+            "contexts": [
+                "continuous-integration"
+            ]
+        },
+        "restrictions": None
+    }
+
+    # Set the list of branches to which the protection rules should be added
+    branches = ["master", "develop"]
+
+    # Loop through the branches and add the protection rules
+    for branch_name in branches:
+        # Set the API endpoint for branch protection
+        api_url = f"https://api.github.com/repos/{repo}/branches/{branch_name}/protection"
+        try:
+            # Send a PUT request to the API endpoint to add the protection rules
+            response = requests.put(
+                api_url, headers=headers, data=json.dumps(body))
+
+            # Check the response status code
+            if response.status_code == 200:
+                logging.info(
+                    f"Branch protection rules added successfully to {branch_name} branch.")
             else:
-                logging.info(f"Branch protection rule already exists for {branch_name}")
-    except Exception as e:
-        logging.error(f"Error adding branch protection rules: {e}")
-        
+                logging.error(
+                    f"Error adding branch protection rules to {branch_name} branch: {response.status_code} {response.text}")
+        except requests.exceptions.RequestException as e:
+            logging.error(
+                f"Exception occurred while adding branch protection rules to {branch_name} branch: {str(e)}")
