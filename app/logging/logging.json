@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+      "my_formatter": {
+          "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+          "datefmt": "%Y-%m-%d %H:%M:%S"
+      }
+  },
+  "handlers": {
+      "console_handler": {
+          "class": "logging.StreamHandler",
+          "formatter": "my_formatter",
+          "level": "INFO"
+      }
+  },
+  "loggers": {
+      "my_module": {
+          "handlers": ["console_handler"],
+          "level": "INFO",
+          "propagate": false
+      }
+  }
+}
