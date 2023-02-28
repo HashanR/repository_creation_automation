@@ -122,14 +122,14 @@ def add_workflow_files_to_repository(repo):
 
         # Create the file in the destination repository
         dst_repo.create_file(f"{dir_to_copy}/{file_path}",
-                             f"Copy {file_path} from {src_repo.name}", file_contents)
+                             f"copy {file_path} from {src_repo.name}", file_contents)
 
         # Copy the file to the master branch
         file_contents = dst_repo.get_contents(
             f"{dir_to_copy}/{file_path}", ref='master').decoded_content.decode()
         if file_contents != src_repo.get_contents(f"{dir_to_copy}/{file_path}").decoded_content.decode():
             dst_repo.create_file(f"{dir_to_copy}/{file_path}",
-                                 f"Copy {file_path} from {src_repo.name} to master", file_contents, branch='master')
+                                 f"copy {file_path} from {src_repo.name} to master", file_contents, branch='master')
 
 
 ##############################################################
