@@ -1,4 +1,4 @@
-name: Repository Creation Automation Workflow
+name: Repository Creation Automation Workflow 
 on:
   workflow_dispatch:
     inputs:
