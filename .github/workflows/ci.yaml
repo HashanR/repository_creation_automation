@@ -6,7 +6,7 @@ on:
         description: 'Enter the name of the repository to create'
         required: true
       team-name:
-        description: 'Enter the name of the team responsible for the repository owns'
+        description: 'Enter the name of the team who owns the repository'
         required: true
 
 jobs:
