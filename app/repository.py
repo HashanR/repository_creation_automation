@@ -46,9 +46,8 @@ def add_readme_create_branches(repo):
     
     try:
         # create README.md file
-        contents = "This is a sample README file."
         repo.create_file("README.md", "Initial commit",
-                         contents, branch="master")
+                         README_CONTENT, branch="master")
         
         
         logging.info(
