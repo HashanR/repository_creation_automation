@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       repository-name:
-        description: 'Enter the name of the repository to deploy to'
+        description: 'Enter the name of the repository to create'
         required: true
       team-name:
-        description: 'Enter the name of the team responsible for the deployment'
+        description: 'Enter the name of the team responsible for the repository owns'
         required: true
 
 jobs:
